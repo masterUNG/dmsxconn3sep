@@ -45,7 +45,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'Peak',
+      title: 'Peakk',
       theme: ThemeData(
           fontFamily: 'Prompt',
           brightness: Brightness.dark,
