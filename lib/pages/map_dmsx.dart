@@ -19,6 +19,7 @@ import 'package:psinsx/models/dmsx_model.dart';
 import 'package:psinsx/models/security_model.dart';
 import 'package:psinsx/pages/detail_money.dart';
 import 'package:psinsx/pages/dmsx_list_page.dart';
+import 'package:psinsx/pages/signin_page.dart';
 import 'package:psinsx/utility/app_controller.dart';
 import 'package:psinsx/utility/app_service.dart';
 import 'package:psinsx/utility/my_calculate.dart';
@@ -35,6 +36,7 @@ import 'package:psinsx/widgets/show_text.dart';
 import 'package:psinsx/widgets/widget_icon_button.dart';
 import 'package:psinsx/widgets/widget_text_button.dart';
 import 'package:psinsx/widgets/widget_text_rich.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:qrscan/qrscan.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -86,7 +88,9 @@ class _MapdmsxState extends State<Mapdmsx> {
   @override
   void initState() {
     super.initState();
+
     readDataApi();
+
     AppService().processFindLocation(context: context);
   }
 
@@ -187,147 +191,159 @@ class _MapdmsxState extends State<Mapdmsx> {
   }
 
   Future<void> readDataApi() async {
-    print('#### readDataApi Work');
+    try {
+      if (markers.isNotEmpty) {
+        markers.clear();
+        greenMarkers.clear();
+        pubpleMarkers.clear();
+        amountGreen = 0;
+        amountPubple = 0;
+        total = 0;
+      }
 
-    if (markers.isNotEmpty) {
-      markers.clear();
-      greenMarkers.clear();
-      pubpleMarkers.clear();
-      amountGreen = 0;
-      amountPubple = 0;
-      total = 0;
-    }
+      if (dmsxModels.isNotEmpty) {
+        dmsxModels.clear();
+      }
 
-    await MyUtility().findUserId().then(
-      (value) async {
-        if (dmsxModels.isNotEmpty) {
-          dmsxModels.clear();
-        }
-        String path =
-            'https://www.dissrecs.com/apipsinsx/getDmsxWherUser2.php?isAdd=true&user_id=$value';
+      String path =
+          'https://www.dissrecs.com/api/tb_work_import_dmsx_data_list.php';
 
-        print('###1feb path ==>>> $path');
+      SharedPreferences preferences = await SharedPreferences.getInstance();
 
-        await dio.Dio().get(path).then(
-          (value) {
-            setState(() {
-              load = false;
-            });
-            if (value.toString() != 'null') {
-              int index = 0;
-              var images = <String>[];
-              for (var item in json.decode(value.data)) {
-                Dmsxmodel dmsxmodel = Dmsxmodel.fromMap(item);
+      dio.Dio objDio = dio.Dio();
+      objDio.options.headers['Content-Type'] = 'application/json';
+      objDio.options.headers['apikey'] = preferences.getString('token');
 
-                print(
-                    '###1may dmsxmodel.status,  ====>>> ${dmsxmodel.dataStatus} ${dmsxmodel.refnoti_date}');
+      await objDio.get(path).then(
+        (value) {
+          setState(() {
+            load = false;
+          });
 
-                String string = dmsxmodel.images!;
-                if (string.isNotEmpty) {
-                  string = string.substring(1, string.length - 1);
+          var data = value.data['data'];
 
-                  if (string.contains(',')) {
-                    var result = string.split(',');
-                    for (var i = 0; i < result.length; i++) {
-                      images.add(result[i].trim());
-                    }
-                  } else {
-                    images.add(string.trim());
-                  }
-                }
+          debugPrint('##3sep ขนาดของ data --> ${data.length}');
 
-                ///if
+          int index = 0;
+          var images = <String>[];
 
-                dmsxModels.add(dmsxmodel);
-                print('#id == ${dmsxmodel.id}');
+          for (var item in data) {
+            Dmsxmodel dmsxmodel = Dmsxmodel.fromMap(item);
 
-                setState(
-                  () {
-                    haveData = true;
-                    procressAddMarker(dmsxmodel, index);
-                    load = false;
-                  },
-                );
-                index++;
-              }
+            debugPrint('##3sep dmsxmodel ---> ${dmsxmodel.toMap()}');
 
-              var groupForDigi = <String>[];
+            images.addAll(dmsxmodel.images);
 
-              print('####30April images ===>>> $images');
+            // String string = dmsxmodel.images;
 
-              Map<String, double> map = {};
+            // if (string.isNotEmpty) {
+            //   string = string.substring(1, string.length - 1);
 
-              for (var item in images) {
-                String string = item.substring(0, 4);
-                //print('###30April string $string');
+            //   if (string.contains(',')) {
+            //     var result = string.split(',');
+            //     for (var i = 0; i < result.length; i++) {
+            //       images.add(result[i].trim());
+            //     }
+            //   } else {
+            //     images.add(string.trim());
+            //   }
+            // }
 
-                if (map.isEmpty) {
-                  map[string] = 1.0;
-                } else {
-                  if (map[string] == null) {
-                    map[string] = 1.0;
-                  } else {
-                    map[string] = map[string]! + 1.0;
-                  }
-                }
+            ///if
 
-                if (groupForDigi.isEmpty) {
-                  groupForDigi.add(string);
-                } else {
-                  bool status = true;
-                  for (var item2 in groupForDigi) {
-                    if (string == item2) {
-                      status = false;
-                    }
-                  }
-                  if (status) {
-                    groupForDigi.add(string);
-                  }
-                }
-              }
+            dmsxModels.add(dmsxmodel);
+            print('#id == ${dmsxmodel.id}');
 
-              // print('##6jul  groubFourDigi ==>> $groupForDigi');
+            setState(
+              () {
+                haveData = true;
+                procressAddMarker(dmsxmodel, index);
+                load = false;
+              },
+            );
+            index++;
+          }
 
-              // if (map['WMST'] != null) {
-              //   if (map['WMST'] != 1) {
-              //     map['WMST']--;
-              //   }
-              // }
+          var groupForDigi = <String>[];
 
-              // if (map['WMS2'] != null) {
-              //   if (map['WMS2'] != 1) {
-              //     map['WMS2']--;
-              //   }
-              // }
+          print('####30April images ===>>> $images');
 
-              print('##6jul  map ==>> $map');
+          Map<String, double> map = {};
 
-              Map<String, double> mapPrices = {};
-              mapPrices['WMMI'] = 35.0;
-              mapPrices['WMMR'] = 35.0;
-              mapPrices['FUCN'] = 20.0;
-              mapPrices['FURM'] = 20.0;
-              mapPrices['WMST'] = 5.0;
-              mapPrices['WMS2'] = 5.0;
+          for (var item in images) {
+            String string = item.substring(0, 4);
+            //print('###30April string $string');
 
-              for (var item4 in groupForDigi) {
-                total = total + (map[item4]! * mapPrices[item4]!);
-              }
-
-              print('##6jul total ==>>> $total');
-
-              // other
-              showMarkers = markers;
-              setState(() {});
+            if (map.isEmpty) {
+              map[string] = 1.0;
             } else {
-              setState(() {
-                haveData = false;
-              });
+              if (map[string] == null) {
+                map[string] = 1.0;
+              } else {
+                map[string] = map[string]! + 1.0;
+              }
             }
-          },
-        );
-      },
-    );
+
+            if (groupForDigi.isEmpty) {
+              groupForDigi.add(string);
+            } else {
+              bool status = true;
+              for (var item2 in groupForDigi) {
+                if (string == item2) {
+                  status = false;
+                }
+              }
+              if (status) {
+                groupForDigi.add(string);
+              }
+            }
+          }
+
+          // print('##6jul  groubFourDigi ==>> $groupForDigi');
+
+          // if (map['WMST'] != null) {
+          //   if (map['WMST'] != 1) {
+          //     map['WMST']--;
+          //   }
+          // }
+
+          // if (map['WMS2'] != null) {
+          //   if (map['WMS2'] != 1) {
+          //     map['WMS2']--;
+          //   }
+          // }
+
+          print('##6jul  map ==>> $map');
+
+          Map<String, double> mapPrices = {};
+          mapPrices['WMMI'] = 35.0;
+          mapPrices['WMMR'] = 35.0;
+          mapPrices['FUCN'] = 20.0;
+          mapPrices['FURM'] = 20.0;
+          mapPrices['WMST'] = 5.0;
+          mapPrices['WMS2'] = 5.0;
+
+          for (var item4 in groupForDigi) {
+            total = total + (map[item4]! * mapPrices[item4]!);
+          }
+
+          print('##6jul total ==>>> $total');
+
+          // other
+          showMarkers = markers;
+          setState(() {});
+        },
+      );
+    } on Exception catch (e) {
+      // TODO
+
+      normalDialog(context, 'กรุณา Login ใหม่ Token หมดอายุ',
+          widget: TextButton(
+              onPressed: () {
+                Get.offAll(SignIn());
+              },
+              child: Text('Login In')));
+    }
   }
 
   @override
@@ -352,23 +368,26 @@ class _MapdmsxState extends State<Mapdmsx> {
   }
 
   Widget showDataMap({required AppController appController}) {
-    return LayoutBuilder(
-      builder: (context, BoxConstraints constranis) {
-        return SizedBox(width: constranis.maxWidth, height: constranis.maxHeight,
-          child: Stack(fit: StackFit.expand,
-            children: [
-              buildMap(),
-              buildMoney(),
-              buildControl(),
-              buildControlGreen(),
-              buildControlPubple(),
-              buildSearchButton(),
-              showDirction ? buildDirction(appController: appController) : SizedBox(),
-            ],
-          ),
-        );
-      }
-    );
+    return LayoutBuilder(builder: (context, BoxConstraints constranis) {
+      return SizedBox(
+        width: constranis.maxWidth,
+        height: constranis.maxHeight,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            buildMap(),
+            buildMoney(),
+            buildControl(),
+            buildControlGreen(),
+            buildControlPubple(),
+            buildSearchButton(),
+            showDirction
+                ? buildDirction(appController: appController)
+                : SizedBox(),
+          ],
+        ),
+      );
+    });
   }
 
   // Positioned buildSearchButton() {
@@ -442,9 +461,7 @@ class _MapdmsxState extends State<Mapdmsx> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => DetaliMoney(
-                  dmsxModels: dmsxModels,
-                ),
+                builder: (context) => DetailMoney(dmsxModels: dmsxModels,),
               ),
             );
           },
@@ -609,18 +626,19 @@ class _MapdmsxState extends State<Mapdmsx> {
                     WidgetIconButton(
                       iconData: Icons.copy,
                       pressFunc: () {
-                        Clipboard.setData(
-                            ClipboardData(text: dmsxModels[indexDirection!].ca!));
+                        Clipboard.setData(ClipboardData(
+                            text: dmsxModels[indexDirection!].ca!));
                         print('copy success');
                       },
                     )
                   ],
                 ),
-            
+
                 ShowTitle(
                   title: MyCalculate().canculateDifferance(
                       statusDate: dmsxModels[indexDirection!].dataStatus!,
-                      refNotification: dmsxModels[indexDirection!].refnoti_date!),
+                      refNotification:
+                          dmsxModels[indexDirection!].refnoti_date!),
                 ),
                 ShowText(
                     text: 'ล่าสุด: ${dmsxModels[indexDirection!].statusTxt}'),
@@ -691,7 +709,8 @@ class _MapdmsxState extends State<Mapdmsx> {
                                             Navigator.pop(context);
                                             print('reult --> $result');
                                             resultDialog(result!,
-                                                indexDirection: indexDirection!);
+                                                indexDirection:
+                                                    indexDirection!);
                                           }
                                         },
                                       ));
@@ -708,8 +727,8 @@ class _MapdmsxState extends State<Mapdmsx> {
                   ],
                 ),
 
-                ShowText(text: dmsxModels[indexDirection!].address!),
-                buildImages(dmsxModels[indexDirection!].images!),
+                ShowText(text: dmsxModels[indexDirection!].address),
+                buildImages(images: dmsxModels[indexDirection!].images),
                 // Row(
                 //   children: [
                 //     ShowText(
@@ -1068,12 +1087,12 @@ class _MapdmsxState extends State<Mapdmsx> {
     }
   }
 
-  Widget buildImages(String strings) {
-    if (strings.isEmpty) {
+  Widget buildImages({required List<String> images}) {
+    if (images.isEmpty) {
       return SizedBox();
     } else {
-      var image = strings.substring(1, strings.length - 1);
-      var images = image.split(',');
+      // var image = strings.substring(1, strings.length - 1);
+      // var images = image.split(',');
 
       var widgets = <Widget>[];
       for (var item in images) {
@@ -1162,8 +1181,8 @@ class _MapdmsxState extends State<Mapdmsx> {
         print('lat == ${dmsxmodel.lat}');
 
         if (!((dmsxmodel.lat == '0') || (dmsxmodel.lng == '0'))) {
-          LatLng latlng =
-              LatLng(double.parse(dmsxmodel.lat!), double.parse(dmsxmodel.lng!));
+          LatLng latlng = LatLng(
+              double.parse(dmsxmodel.lat!), double.parse(dmsxmodel.lng!));
           mapController!.animateCamera(CameraUpdate.newCameraPosition(
               CameraPosition(target: latlng, zoom: 16)));
         } else {
@@ -1227,7 +1246,9 @@ class _MapdmsxState extends State<Mapdmsx> {
                 'ที่อยู่ : ${dmsxmodel.address}',
                 style: TextStyle(fontSize: 12),
               ),
-              dmsxmodel.images!.isEmpty ? SizedBox() : showListImages(dmsxmodel),
+              dmsxmodel.images!.isEmpty
+                  ? SizedBox()
+                  : showListImages(dmsxmodel),
             ],
           ),
         ),
@@ -1240,8 +1261,7 @@ class _MapdmsxState extends State<Mapdmsx> {
                         dmsxmodel: dmsxmodel,
                         source: ImageSource.gallery,
                         distance: null,
-                        position: null)
-                        ;
+                        position: null);
                   },
                   child: Text('เลือกรูป'),
                 )
@@ -1292,8 +1312,8 @@ class _MapdmsxState extends State<Mapdmsx> {
   Future<void> processTakePhoto(
       {required Dmsxmodel dmsxmodel,
       ImageSource? source,
-       String? distance,
-       Position? position}) async {
+      String? distance,
+      Position? position}) async {
     try {
       print('##14dec processTakePhoto Work');
       // var re = await FilePicker.platform.pickFiles(
@@ -1374,7 +1394,9 @@ class _MapdmsxState extends State<Mapdmsx> {
                     style: TextStyle(fontSize: 12, color: Colors.red),
                   ),
                   Text(
-                    position == null ? '' : 'พิกัดเครื่อง: ${position.latitude} ${position.longitude}',
+                    position == null
+                        ? ''
+                        : 'พิกัดเครื่อง: ${position.latitude} ${position.longitude}',
                     style: TextStyle(fontSize: 12),
                   ),
                   distance == null
@@ -1401,8 +1423,10 @@ class _MapdmsxState extends State<Mapdmsx> {
             ),
             actions: [
               //showUpload ? buttonUpImage(context, file, dmsxmodel) : SizedBox(),
-              position == null ? SizedBox()   : buttonUpImage(context, file, dmsxmodel,
-                  position: position, distanceStr: distance ?? ''),
+              position == null
+                  ? SizedBox()
+                  : buttonUpImage(context, file, dmsxmodel,
+                      position: position, distanceStr: distance ?? ''),
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text('ยกเลิก'),
@@ -1453,9 +1477,13 @@ class _MapdmsxState extends State<Mapdmsx> {
             await processUploadAndEdit(file, nameFile, dmsxmodel,
                 position: position, distanceStr: distanceStr);
           } else {
-            String string = dmsxmodel.images!;
-            string = string.substring(1, string.length - 1);
-            List<String> images = string.split(',');
+            // String string = dmsxmodel.images!;
+            // string = string.substring(1, string.length - 1);
+
+            List<String> images = [];
+
+            images.addAll(dmsxmodel.images);
+
             int i = 0;
             for (var item in images) {
               images[i] = item.trim();
@@ -1492,7 +1520,8 @@ class _MapdmsxState extends State<Mapdmsx> {
   Future<void> processUploadAndEdit(
       File file, String nameFile, Dmsxmodel dmsxmodel,
       {required Position position, required String distanceStr}) async {
-    String pathUpload = 'https://www.dissrecs.com/apipsinsx/saveImageCustomer.php';
+    String pathUpload =
+        'https://www.dissrecs.com/apipsinsx/saveImageCustomer.php';
 
     Map<String, dynamic> map = {};
     map['file'] =
@@ -1503,16 +1532,16 @@ class _MapdmsxState extends State<Mapdmsx> {
       print('# === value for upload ==>> $value');
 
       List<String> images = [];
+
       var listStatus = <String>[];
 
       print('@@ statusText === $statusText');
 
-      if (dmsxmodel.images!.isEmpty) {
+      if (dmsxmodel.images.isEmpty) {
         images.add(nameFile);
       } else {
-        String string = dmsxmodel.images!;
-        string = string.substring(1, string.length - 1);
-        images = string.split(',');
+        images.addAll(dmsxmodel.images);
+
         int index = 0;
         for (var item in images) {
           images[index] = item.trim();
@@ -1558,9 +1587,10 @@ class _MapdmsxState extends State<Mapdmsx> {
     print('##### image ==> ${dmsxmodel.images}');
     List<Widget> widgets = [];
 
-    String string = dmsxmodel.images!;
-    string = string.substring(1, string.length - 1);
-    List<String> strings = string.split(',');
+    // String string = dmsxmodel.images!;
+    // string = string.substring(1, string.length - 1);
+    List<String> strings = [];
+    strings.addAll(dmsxmodel.images);
     print('### strings ==> $strings');
 
     for (var item in strings) {
@@ -1636,8 +1666,7 @@ class _MapdmsxState extends State<Mapdmsx> {
     }
   }
 
-  Future<void> checkDisplayIconTakePhoto(
-      {required Dmsxmodel dmsxmodel}) async {
+  Future<void> checkDisplayIconTakePhoto({required Dmsxmodel dmsxmodel}) async {
     DateTime dateTime = DateTime.now();
     DateFormat dateFormat = DateFormat('yyyy-MM-dd');
     String currentDateTime = dateFormat.format(dateTime);
@@ -1672,4 +1701,4 @@ class _MapdmsxState extends State<Mapdmsx> {
 // WMST = ผ่อนผันครั้งที่ 1 * 10
 // WMS2 = ผ่อนผันครั้งที่ 2 * 10
 
-// ( FURM + FUCN + WMMR + WMST + WMS2 ) - (WMST + WMS2) 
+// ( FURM + FUCN + WMMR + WMST + WMS2 ) - (WMST + WMS2)

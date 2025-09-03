@@ -61,8 +61,8 @@ class _ShowCusnameDetailState extends State<ShowCusnameDetail> {
         onTap: () async {
 
             processAddImage(dmsxmodel!);
-          if (dmsxmodel!.images!.isNotEmpty) {
-            checkAmountImage(dmsxmodel!.images!);
+          if (dmsxmodel!.images.isNotEmpty) {
+            checkAmountImage(dmsxModel: dmsxmodel!);
           }
           
           // showDialog(
@@ -184,10 +184,11 @@ class _ShowCusnameDetailState extends State<ShowCusnameDetail> {
     );
   }
 
-    void checkAmountImage(String images) {
-    String string = images;
-    string = string.substring(1, string.length - 1);
-    List<String> strings = string.split(',');
+    void checkAmountImage({required Dmsxmodel dmsxModel}) {
+    // String string = images;
+    // string = string.substring(1, string.length - 1);
+    List<String> strings = [];
+    strings.addAll(dmsxModel.images);
     if (strings.length >= 2) {
       setState(() {
         checkAmountImagebol = false;
@@ -200,10 +201,13 @@ class _ShowCusnameDetailState extends State<ShowCusnameDetail> {
     print('##### image ==> ${dmsxmodel.images}');
     List<Widget> widgets = [];
 
-    String string = dmsxmodel.images!;
-    string = string.substring(1, string.length - 1);
-    List<String> strings = string.split(',');
-    print('### strings ==> $strings');
+    // String string = dmsxmodel.images!;
+    // string = string.substring(1, string.length - 1);
+
+    List<String> strings = [];
+    strings.addAll(dmsxmodel.images);
+
+    // print('### strings ==> $strings');
 
     for (var item in strings) {
       widgets.add(
@@ -360,9 +364,10 @@ class _ShowCusnameDetailState extends State<ShowCusnameDetail> {
           if (dmsxmodel.images!.isEmpty) {
             images.add(nameFile);
           } else {
-            String string = dmsxmodel.images!;
-            string = string.substring(1, string.length - 1);
-            images = string.split(',');
+            // String string = dmsxmodel.images!;
+            // string = string.substring(1, string.length - 1);
+            images = [];
+            images.addAll(dmsxmodel.images);
             int index = 0;
             for (var item in images) {
               images[index] = item.trim();
@@ -478,8 +483,8 @@ class _ShowCusnameDetailState extends State<ShowCusnameDetail> {
       infoWindow: InfoWindow(
         onTap: () {
           processAddImage(dmsxmodel);
-          if (dmsxmodel.images!.isNotEmpty) {
-            checkAmountImage(dmsxmodel.images!);
+          if (dmsxmodel.images.isNotEmpty) {
+            checkAmountImage(dmsxModel: dmsxmodel);
           }
         },
         title: '${dmsxmodel.employeeId}',
