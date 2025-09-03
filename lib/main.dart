@@ -27,8 +27,11 @@ final Map<String, WidgetBuilder> map = {
 String? initialRount;
 
 Future<Null> main() async {
-  HttpOverrides.global = MyHttpOverride();
+
   WidgetsFlutterBinding.ensureInitialized();
+  
+  HttpOverrides.global = MyHttpOverride();
+  
   SharedPreferences preferences = await SharedPreferences.getInstance();
   String? string = preferences.getString('id');
 

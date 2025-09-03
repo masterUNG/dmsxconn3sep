@@ -7,9 +7,13 @@ import 'package:image_picker/image_picker.dart';
 class AppController extends GetxController {
   
   RxList positions = <Position>[].obs;
+
   RxList files = <File>[].obs;
 
   RxList<XFile> xFiles = <XFile>[].obs;
+
   RxList<String> nameFiles =<String>[].obs;
+
+  RxList<String> tokens =<String>[].obs;
 
 }
