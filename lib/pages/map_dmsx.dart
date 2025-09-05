@@ -1442,6 +1442,7 @@ class _MapdmsxState extends State<Mapdmsx> {
       {required Position position, required String distanceStr}) {
     return TextButton(
       onPressed: () async {
+
         Navigator.pop(context);
         String nameWithoutExtension = path.basenameWithoutExtension(file.path);
         var name = nameWithoutExtension.split("_");
@@ -1453,8 +1454,8 @@ class _MapdmsxState extends State<Mapdmsx> {
 
         print('dmsx code = $code');
 
-        if ((code.trim() != dmsxmodel.ca!.trim()) &&
-            (code.trim() != dmsxmodel.peaNo!.trim())) {
+        if ((code.trim() != dmsxmodel.ca.trim()) &&
+            (code.trim() != dmsxmodel.peaNo.trim())) {
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
@@ -1469,16 +1470,22 @@ class _MapdmsxState extends State<Mapdmsx> {
             ),
           );
         } else {
+
+          // ภาพถูกต้องอัพได้
+
           String nameFile = path.basename(file.path);
+
           print('##6mar nameFile = $nameFile');
           print('##6mar nameFile บน servver = ${dmsxmodel.images}');
 
-          if (dmsxmodel.images?.isEmpty ?? true) {
+          if (dmsxmodel.images.isEmpty) {
+
+            //Uplaod ภาพแรก
             await processUploadAndEdit(file, nameFile, dmsxmodel,
                 position: position, distanceStr: distanceStr);
           } else {
-            // String string = dmsxmodel.images!;
-            // string = string.substring(1, string.length - 1);
+            
+            //Upload ภาพที่สอง
 
             List<String> images = [];
 
@@ -1511,6 +1518,13 @@ class _MapdmsxState extends State<Mapdmsx> {
               normalDialog(context, 'รูปซ้ำครับ');
             }
           }
+
+
+
+
+
+
+
         } //end if
       },
       child: Text('อัพโหลด'),
