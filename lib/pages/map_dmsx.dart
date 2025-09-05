@@ -14,6 +14,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:psinsx/main.dart';
 import 'package:psinsx/models/dmsx_befor_image_model.dart';
 import 'package:psinsx/models/dmsx_model.dart';
 import 'package:psinsx/models/security_model.dart';
@@ -461,7 +462,9 @@ class _MapdmsxState extends State<Mapdmsx> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => DetailMoney(dmsxModels: dmsxModels,),
+                builder: (context) => DetailMoney(
+                  dmsxModels: dmsxModels,
+                ),
               ),
             );
           },
@@ -1442,7 +1445,6 @@ class _MapdmsxState extends State<Mapdmsx> {
       {required Position position, required String distanceStr}) {
     return TextButton(
       onPressed: () async {
-
         Navigator.pop(context);
         String nameWithoutExtension = path.basenameWithoutExtension(file.path);
         var name = nameWithoutExtension.split("_");
@@ -1470,7 +1472,6 @@ class _MapdmsxState extends State<Mapdmsx> {
             ),
           );
         } else {
-
           // ภาพถูกต้องอัพได้
 
           String nameFile = path.basename(file.path);
@@ -1479,37 +1480,13 @@ class _MapdmsxState extends State<Mapdmsx> {
           print('##6mar nameFile บน servver = ${dmsxmodel.images}');
 
           if (dmsxmodel.images.isEmpty) {
-
             //Uplaod ภาพแรก
             await processUploadAndEdit(file, nameFile, dmsxmodel,
                 position: position, distanceStr: distanceStr);
           } else {
-            
             //Upload ภาพที่สอง
 
-            List<String> images = [];
-
-            images.addAll(dmsxmodel.images);
-
-            int i = 0;
-            for (var item in images) {
-              images[i] = item.trim();
-              i++;
-            }
-
-            print('30jan images ===> $images');
-
-            bool dulucapeImage = false;
-
-            for (var item in images) {
-              if (nameFile.trim() == item.trim()) {
-                dulucapeImage = true;
-              }
-            }
-
-            print('30jan dulucapImage === $dulucapeImage');
-
-            if (!dulucapeImage) {
+            if (!(dmsxmodel.images.contains(nameFile))) {
               await processUploadAndEdit(file, nameFile, dmsxmodel,
                   position: position, distanceStr: distanceStr);
             } else {
@@ -1518,13 +1495,6 @@ class _MapdmsxState extends State<Mapdmsx> {
               normalDialog(context, 'รูปซ้ำครับ');
             }
           }
-
-
-
-
-
-
-
         } //end if
       },
       child: Text('อัพโหลด'),
@@ -1532,69 +1502,60 @@ class _MapdmsxState extends State<Mapdmsx> {
   }
 
   Future<void> processUploadAndEdit(
-      File file, String nameFile, Dmsxmodel dmsxmodel,
-      {required Position position, required String distanceStr}) async {
-    String pathUpload =
-        'https://www.dissrecs.com/apipsinsx/saveImageCustomer.php';
-
-    Map<String, dynamic> map = {};
-    map['file'] =
-        await dio.MultipartFile.fromFile(file.path, filename: nameFile);
-    dio.FormData data = dio.FormData.fromMap(map);
-
-    await dio.Dio().post(pathUpload, data: data).then((value) async {
-      print('# === value for upload ==>> $value');
-
-      List<String> images = [];
-
-      var listStatus = <String>[];
-
-      print('@@ statusText === $statusText');
-
-      if (dmsxmodel.images.isEmpty) {
-        images.add(nameFile);
-      } else {
-        images.addAll(dmsxmodel.images);
-
-        int index = 0;
-        for (var item in images) {
-          images[index] = item.trim();
-          index++;
-        }
-        images.add(nameFile);
-
-        String statusTextCurrent = dmsxmodel.statusTxt!;
-        statusTextCurrent =
-            statusTextCurrent.substring(1, statusTextCurrent.length - 1);
-        listStatus = statusTextCurrent.split(',');
-        int i = 0;
-        for (var item in listStatus) {
-          listStatus[i] = item.trim();
-          i++;
-        }
-        listStatus.add(statusText!);
-      }
-
+    File file,
+    String nameFile,
+    Dmsxmodel dmsxmodel, {
+    required Position position,
+    required String distanceStr,
+  }) async {
+    try {
       String readNumber = 'ดำเนินการแล้ว';
 
-      if (dmsxmodel.readNumber!.isEmpty) {
+      if (dmsxmodel.readNumber.isEmpty) {
         readNumber = 'ดำเนินการแล้ว';
       } else {
         readNumber = 'ต่อกลับแล้ว';
       }
 
-      print('@@ listStatus === $listStatus');
+      String urlAPI =
+          'https://www.dissrecs.com/api/tb_work_import_dmsx_data_update.php?id=${dmsxmodel.id}';
 
-      String apiEditImages =
-          'https://www.dissrecs.com/apipsinsx/editDmsxWhereId.php?isAdd=true&id=${dmsxmodel.id}&images=${images.toString()}&status_txt=$statusText&readNumber=$readNumber&latMobile=${position.latitude}&lngMobile=${position.longitude}&distaneMobile=$distanceStr';
+      SharedPreferences preferences = await SharedPreferences.getInstance();
+      String? token = preferences.getString('token');
 
-      await dio.Dio().get(apiEditImages).then((value) {
-        print('value update == $value');
-        readDataApi().then((value) {
-          // takePhotoSpecial();
-        });
-      });
-    });
+      debugPrint('##5sep dmsxmodel.images ===> ${dmsxmodel.images}');
+
+     
+
+      
+
+      Map<String, dynamic> data = {};
+      data['status_txt'] = statusText;
+      data['readNumber'] = readNumber;
+      data['latMobile'] = position.latitude;
+      data['lngMobile'] = position.longitude;
+      data['distaneMobile'] = distanceStr;
+      data['image_upload'] = await dio.MultipartFile.fromFile(file.path);
+      data['images'] = dmsxmodel.images.toString();
+
+      dio.FormData formData = dio.FormData.fromMap(data);
+
+      if (token != null) {
+        dio.Dio objDio = dio.Dio();
+        objDio.options.headers['Content-Type'] = 'application/json';
+        objDio.options.headers['apikey'] = token;
+
+        var response = await objDio.post(urlAPI, data: formData);
+
+        if (response.statusCode == 200) {
+          readDataApi();
+
+          Get.snackbar('อัพข้อมูลสำเร็จ', 'อัพข้อมูลสำเร็จ');
+        }
+      }
+    } on Exception catch (e) {
+      debugPrint('##5sep Error ตอนอัพภาพ ===> ${e.toString()}');
+    }
   }
 
   Widget showListImages(Dmsxmodel dmsxmodel) {

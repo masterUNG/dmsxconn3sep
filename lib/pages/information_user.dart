@@ -11,6 +11,11 @@ class InformationUser extends StatelessWidget {
 
 
 
+
+
+
+
+
 // import 'dart:convert';
 
 // import 'package:circular_profile_avatar/circular_profile_avatar.dart';
