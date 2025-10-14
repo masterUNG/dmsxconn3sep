@@ -1,16 +1,15 @@
-import 'dart:convert';
-
-import 'package:dio/dio.dart';
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 
 import 'package:psinsx/models/dmsx_model.dart';
+import 'package:psinsx/models/search_dmsx_model.dart';
 import 'package:psinsx/pages/show_map_from_search.dart';
-import 'package:psinsx/utility/my_constant.dart';
 import 'package:psinsx/utility/my_dialog.dart';
-import 'package:psinsx/utility/normal_dialog.dart';
 import 'package:psinsx/widgets/show_button.dart';
 import 'package:psinsx/widgets/show_form.dart';
 import 'package:psinsx/widgets/show_text.dart';
+import 'package:psinsx/widgets/widget_text_button.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SearchDmsx extends StatefulWidget {
   const SearchDmsx({
@@ -27,13 +26,16 @@ class SearchDmsx extends StatefulWidget {
 class _SearchDmsxState extends State<SearchDmsx> {
   final formStateKey = GlobalKey<FormState>();
   String? search;
-  var dmsxModels = <Dmsxmodel>[];
+  // var dmsxModels = <Dmsxmodel>[];
+
+  var searchDmsxModels = <SearchDmsxModel>[];
+
   bool displayBackIcon = true;
 
   @override
   void initState() {
     super.initState();
-    if (widget.displayBackIcon !=null) {
+    if (widget.displayBackIcon != null) {
       displayBackIcon = widget.displayBackIcon!;
     }
   }
@@ -49,26 +51,34 @@ class _SearchDmsxState extends State<SearchDmsx> {
           child: Center(
             child: ListView(
               children: [
-               displayBackIcon ?  ListTile(
-                  leading: IconButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      }, icon: Icon(Icons.arrow_back)),
-                  title: Text('ค้นหาพิกัดงดจ่ายไฟ'),
-                ) : const SizedBox(),
+                displayBackIcon
+                    ? ListTile(
+                        leading: IconButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            icon: Icon(Icons.arrow_back)),
+                        title: Text('ค้นหาพิกัดงดจ่ายไฟ'),
+                      )
+                    : const SizedBox(),
                 SizedBox(
                   height: 20,
                 ),
+
                 formSearch(),
+
                 buttonSearch(),
-                dmsxModels.isEmpty
+
+                // Text('display Result Search'),
+
+                searchDmsxModels.isEmpty
                     ? const SizedBox()
                     : ListView.builder(
                         shrinkWrap: true,
                         physics: ScrollPhysics(),
-                        itemCount: dmsxModels.length,
-                        itemBuilder: (context, index) =>
-                            newResultSearch(dmsxmodel: dmsxModels[index]),
+                        itemCount: searchDmsxModels.length,
+                        itemBuilder: (context, index) => newResultSearch(
+                            searDmsxModel: searchDmsxModels[index]),
                       ),
               ],
             ),
@@ -78,7 +88,7 @@ class _SearchDmsxState extends State<SearchDmsx> {
     );
   }
 
-  Widget newResultSearch({required Dmsxmodel dmsxmodel}) {
+  Widget newResultSearch({required SearchDmsxModel searDmsxModel}) {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -87,19 +97,48 @@ class _SearchDmsxState extends State<SearchDmsx> {
       margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
       child: Column(
         children: [
-          newTitle(head: 'วันที่สถานะ', value: dmsxmodel.dataStatus!),
-          newTitle(head: 'ชื่อ ผชฟ :', value: dmsxmodel.cusName!),
-          newTitle(head: 'ที่อยู่ :', value: dmsxmodel.address!),
-          ShowButton(
-              pressFunc: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          ShowMapFromSearch(dmsxmodel: dmsxmodel),
-                    ));
-              },
-              label: 'แสดงแผนที่')
+          newTitle(head: 'วันที่สถานะ', value: searDmsxModel.timestamp),
+          newTitle(head: 'ชื่อ ผชฟ :', value: searDmsxModel.cus_name),
+          newTitle(head: 'Status :', value: searDmsxModel.status_txt),
+
+
+
+          Row(mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              ShowButton(
+                  pressFunc: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              ShowMapFromSearch(searchDmsxModel: searDmsxModel),
+                        ));
+                  },
+                  label: 'แสดงแผนที่'),
+
+
+              (((searDmsxModel.latMobile == '0') || (searDmsxModel.latMobile == '0')) || ((searDmsxModel.latMobile.isEmpty) || (searDmsxModel.latMobile.isEmpty))) ?    SizedBox()   : ShowButton(
+                  pressFunc: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              ShowMapFromSearch(searchDmsxModel: searDmsxModel, showMobile: true),
+                        ));
+                  },
+                  label: 'แสดงแผนที่ (Mobile)'),
+
+
+            ],
+          ),
+
+
+
+
+
+
+
+
         ],
       ),
     );
@@ -124,6 +163,8 @@ class _SearchDmsxState extends State<SearchDmsx> {
             if (formStateKey.currentState!.validate()) {
               formStateKey.currentState!.save();
               print('##6jun search === $search');
+
+              searchDmsxModels.clear();
 
               processReadSearch();
             }
@@ -157,27 +198,74 @@ class _SearchDmsxState extends State<SearchDmsx> {
   }
 
   Future<void> processReadSearch() async {
-    MyDialog(context: context).processDialog();
+    // MyDialog(context: context).processDialog();
 
-    if (dmsxModels.isNotEmpty) {
-      dmsxModels.clear();
-    }
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    String token = await preferences.getString('token') ?? '';
+
+    dio.Dio objDio = dio.Dio();
+    objDio.options.headers['Content-Type'] = 'application/json';
+    objDio.options.headers['apikey'] = token;
 
     String path =
-        'https://www.dissrecs.com/apipsinsx/getDmsxLocationWhereCa.php?isAdd=true&ca=$search';
-    await Dio().get(path).then((value) {
-      Navigator.pop(context);
-      if (value.toString() == 'null') {
-        normalDialog(context, 'ไม่พบข้อมูล');
-      } else {
-        for (var element in json.decode(value.data)) {
-          // print('##6jun element === $element');
-          Dmsxmodel dmsxmodel = Dmsxmodel.fromMap(element);
-          dmsxModels.add(dmsxmodel);
-        }
+        'https://www.dissrecs.com/api/tb_work_import_dmsx_data_ca.php?ca=$search';
+
+    var resultSearch = await objDio.get(path);
+
+    debugPrint('##14oct resultSearch ---> $resultSearch');
+
+    var data = resultSearch.data['data'];
+    debugPrint('##14oct data ---> $data');
+
+    if (data.isEmpty) {
+      // ไม่มี ca
+      
+      setState(() {
+        
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('ไม่มี ca = $search ในฐานข้อมูล')));
+    } else {
+      // มี ca
+
+      for (var element in data) {
+        SearchDmsxModel model = SearchDmsxModel.fromMap(element);
+        searchDmsxModels.add(model);
       }
 
-      setState(() {});
-    });
+      setState(() {
+
+
+        for (var element in searchDmsxModels) {
+          
+          debugPrint('##14octV2 latMobile = ${element.latMobile}, lngMobile = ${element.lngMobile}');
+        }
+
+
+      });
+    }
+
+    // if (dmsxModels.isNotEmpty) {
+    //   dmsxModels.clear();
+    // }
+
+    // String path =
+    //     'https://www.dissrecs.com/apipsinsx/getDmsxLocationWhereCa.php?isAdd=true&ca=$search';
+    // await Dio().get(path).then((value) {
+    //   Navigator.pop(context);
+    //   if (value.toString() == 'null') {
+    //     normalDialog(context, 'ไม่พบข้อมูล');
+    //   } else {
+    //     for (var element in json.decode(value.data)) {
+    //       // print('##6jun element === $element');
+    //       Dmsxmodel dmsxmodel = Dmsxmodel.fromMap(element);
+    //       dmsxModels.add(dmsxmodel);
+    //     }
+    //   }
+
+    //   setState(() {});
+
+    // });
   }
 }
