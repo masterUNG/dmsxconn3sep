@@ -360,9 +360,22 @@ class _MapdmsxState extends State<Mapdmsx> {
                 ? ShowProgress()
                 : haveData ?? false
                     ? showDataMap(appController: appController)
-                    : const SizedBox(),
+                    : Center(child: Text('ไม่มีข้อมูล', style:  TextStyle(fontSize: 24, fontWeight: FontWeight.bold),)),
             bottomNavigationBar: BottomAppBar(
               color: Colors.white,
+            ),
+            floatingActionButton: Row(
+              children: [
+
+                SizedBox(width: 16),
+
+                IconButton(onPressed: () {
+                
+                  readDataApi();
+                  
+                }, icon: Container(decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(8)),padding: EdgeInsets.all(4),
+                  child: Icon(Icons.refresh, color: Colors.white,))),
+              ],
             ),
           );
         });

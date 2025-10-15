@@ -56,6 +56,7 @@ dependencies:
   # qrscan: ^0.3.3
   permission_handler: ^12.0.1
   upgrader: ^11.4.0
+  loader_overlay: ^5.0.0
 
 flutter_icons:
   android: true

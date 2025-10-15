@@ -253,8 +253,23 @@ class _HomePageState extends State<HomePage> {
                   onTap: () {
 
                     Navigator.pop(context);
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => DmsxLoadList()));
+
+                    Get.to(DmsxLoadList())?.then((value) {
+
+                      
+                      
+                    },);
+
+                    // Navigator.of(context).push(MaterialPageRoute(
+                    //     builder: (context) => DmsxLoadList())).then((value) {
+
+                    //       if (value ?? false) {
+                    //         setState(() {
+                              
+                    //         });
+                    //       }
+                          
+                    //     },);
                         
 
                   }),
