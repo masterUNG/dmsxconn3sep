@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:psinsx/models/dmsx_load_model.dart';
@@ -47,6 +48,21 @@ class _DmsxLoadListState extends State<DmsxLoadList> {
   @override
   Widget build(BuildContext context) {
     return LoaderOverlay(
+
+
+      useDefaultLoading: false,
+      overlayWidgetBuilder: (progress) {
+        return Center(
+            child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SpinKitCubeGrid(
+              color: Colors.white,
+            ),
+            Text('Loading ...', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ));
+      },
       child: Scaffold(
         appBar: AppBar(
           title: Text('โหลดข้อมูล Dm'),
@@ -67,42 +83,48 @@ class _DmsxLoadListState extends State<DmsxLoadList> {
                       itemBuilder: (context, index) => InkWell(
                         onTap: () {
                           MyDialog(context: context).normalDialot(
-                              title: dmsxLoadModels[index].desc,
+                              title: dmsxLoadModels[index].desc, textStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                               subTitle: 'คุณต้องการโหลดข้อมูลนี่ ???',
                               firstButton: TextButton(
                                   onPressed: () async {
                                     Get.back();
 
                                     context.loaderOverlay.show();
-      
+
                                     String urlAPI =
                                         'https://www.dissrecs.com/api/dmsx_load_proc.php?id=${dmsxLoadModels[index].id}';
-      
+
                                     SharedPreferences preferences =
                                         await SharedPreferences.getInstance();
-      
+
                                     dio.Dio objDio = dio.Dio();
                                     objDio.options.headers['Content-Type'] =
                                         'application/json';
                                     objDio.options.headers['apikey'] =
                                         preferences.getString('token');
-      
-      
-                                    await objDio.get(urlAPI).then((value) {
-                                      
+
+                                    await objDio.get(urlAPI).then(
+                                      (value) {
                                         context.loaderOverlay.hide();
 
-                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('โหลดสำเร็จ ')));
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(SnackBar(
+                                                backgroundColor: Colors.black,
+                                                duration: Duration(seconds: 5),
+                                                content: Text(
+                                                  'โหลดสำเร็จ กรุณา Refresh',
+                                                  style: TextStyle(
+                                                      color: Colors.amberAccent,
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                )));
 
                                         // Navigator.pop(context, [true]);
 
                                         Get.back(result: true);
-                                      
-                                    },);
-      
-      
-      
-      
+                                      },
+                                    );
                                   },
                                   child: Text('ยืนยัน')));
                         },
@@ -112,8 +134,10 @@ class _DmsxLoadListState extends State<DmsxLoadList> {
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('id = ${dmsxLoadModels[index].id}'),
-                              Text('desc = ${dmsxLoadModels[index].desc}'),
+                              // Text('id = ${dmsxLoadModels[index].id}'),
+                              SizedBox(height: 8),
+                              Text('สาขา = ${dmsxLoadModels[index].desc}'),
+                              SizedBox(height: 8),
                               Divider(),
                             ],
                           ),

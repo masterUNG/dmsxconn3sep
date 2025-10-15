@@ -224,162 +224,10 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return UpgradeAlert(
       child: Scaffold(
-        drawer: Drawer(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              showDrawerHeader(),
-              // ListTile(
-              //     leading: Icon(Icons.person_pin),
-              //     title: Text('ข้อมูลส่วนตัว'),
-              //     subtitle: Text(
-              //       'ข้อมูลส่วนตัวของพนักงาน',
-              //       style: TextStyle(fontSize: 10),
-              //     ),
-              //     trailing: Icon(Icons.arrow_right),
-              //     onTap: () {
-              //       Navigator.pop(context);
-              //       Navigator.of(context).push(MaterialPageRoute(
-              //           builder: (context) => InformationUser()));
-              //     }),
-              ListTile(
-                  leading: Icon(Icons.person_pin),
-                  title: Text('ดึ่งข้อมูล Dm'),
-                  subtitle: Text(
-                    'โหลดข้อมูล Dm',
-                    style: TextStyle(fontSize: 10),
-                  ),
-                  trailing: Icon(Icons.arrow_right),
-                  onTap: () {
-
-                    Navigator.pop(context);
-
-                    Get.to(DmsxLoadList())?.then((value) {
-
-                      
-                      
-                    },);
-
-                    // Navigator.of(context).push(MaterialPageRoute(
-                    //     builder: (context) => DmsxLoadList())).then((value) {
-
-                    //       if (value ?? false) {
-                    //         setState(() {
-                              
-                    //         });
-                    //       }
-                          
-                    //     },);
-                        
-
-                  }),
-              ListTile(
-                  leading: Icon(Icons.help),
-                  title: Text('ช่วยเหลือ'),
-                  subtitle: Text(
-                    'ช่วยเหลือ คู่มือต่าง',
-                    style: TextStyle(fontSize: 10),
-                  ),
-                  trailing: Icon(Icons.arrow_right),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.of(context).push(
-                        MaterialPageRoute(builder: (context) => HelpPage()));
-                  }),
-              ListTile(
-                  leading: Icon(Icons.download_rounded),
-                  title: Text('ดึงข้อมูล'),
-                  subtitle: Text(
-                    'เปิดเว็ปไซต์บริษัท,แหล่งข้อมูล',
-                    style: TextStyle(fontSize: 10),
-                  ),
-                  trailing: Icon(Icons.arrow_right),
-                  onTap: () {
-
-
-                    Navigator.pop(context);
-
-                    launchURL();
-
-
-                  }),
-              ListTile(
-                leading: Icon(Icons.logout),
-                title: Text('ออกจากระบบ'),
-                subtitle: Text(
-                  'ออกจากระบบ',
-                  style: TextStyle(fontSize: 10),
-                ),
-                onTap: () {
-                  //signOutProcess();
-                  //deleteAllData();
-                  confirmDialog();
-                },
-              ),
-              Divider(),
-              ListTile(
-                title: Text('Version อัพเดทล่าสุด'),
-                subtitle: Text(
-                  'อัพเดทเมื่อ 31 กรกฎาคม 2568',
-                  style: TextStyle(fontSize: 10),
-                ),
-              ),
-            ],
-          ),
-        ),
-        appBar: AppBar(
-          title: Center(
-            child: Row(
-              children: [
-                ShowText(
-                  text: title[selectedIndex],
-                  textStyle: MyConstant().h2Style(),
-                ),
-                Text(
-                  // online ? ' ออนไลน์' : ' ออฟไลน์',
-                  '',
-                  style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.bold,
-                      color: online ? Colors.green : Colors.red),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            // selectedIndex == 0
-            //     ? Switch(
-            //         value: online,
-            //         onChanged: (velue) {
-            //           setState(() {
-            //             online = velue;
-            //             cratePages();
-            //           });
-            //         })
-            //     : const SizedBox(),
-            InkWell(
-              onTap: () {
-                moveToEditProfile();
-              },
-              child: Icon(
-                Icons.person_outline,
-                size: 36,
-              ),
-              // child: CircularProfileAvatar(
-              //   '$userImge',
-              //   borderWidth: 2,
-              //   radius: 28,
-              //   elevation: 5.0,
-              //   cacheImage: true,
-              //   foregroundColor: Colors.brown.withOpacity(0.5),
-              //   imageFit: BoxFit.cover,
-              // ),
-            ),
-
-            SizedBox(width: 16),
-          ],
-        ),
-        body: pages[selectedIndex],
+        drawer: appDrawer(context),
+        appBar: appAppBar(),
+        body: SafeArea(child: SizedBox(width: Get.width,height: Get.height,
+          child: Expanded(child: pages[selectedIndex]),)),
         bottomNavigationBar: BottomNavigationBar(
             backgroundColor: Color(0xff6a1b9a),
             selectedItemColor: Colors.white,
@@ -415,6 +263,158 @@ class _HomePageState extends State<HomePage> {
             ]),
       ),
     );
+  }
+
+  AppBar appAppBar() {
+    return AppBar(
+        title: Center(
+          child: Row(
+            children: [
+              ShowText(
+                text: title[selectedIndex],
+                textStyle: MyConstant().h2Style(),
+              ),
+              Text(
+                // online ? ' ออนไลน์' : ' ออฟไลน์',
+                '',
+                style: TextStyle(
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                    color: online ? Colors.green : Colors.red),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          // selectedIndex == 0
+          //     ? Switch(
+          //         value: online,
+          //         onChanged: (velue) {
+          //           setState(() {
+          //             online = velue;
+          //             cratePages();
+          //           });
+          //         })
+          //     : const SizedBox(),
+          InkWell(
+            onTap: () {
+              moveToEditProfile();
+            },
+            child: Icon(
+              Icons.person_outline,
+              size: 36,
+            ),
+            // child: CircularProfileAvatar(
+            //   '$userImge',
+            //   borderWidth: 2,
+            //   radius: 28,
+            //   elevation: 5.0,
+            //   cacheImage: true,
+            //   foregroundColor: Colors.brown.withOpacity(0.5),
+            //   imageFit: BoxFit.cover,
+            // ),
+          ),
+
+          SizedBox(width: 16),
+        ],
+      );
+  }
+
+  Drawer appDrawer(BuildContext context) {
+    return Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            showDrawerHeader(),
+            // ListTile(
+            //     leading: Icon(Icons.person_pin),
+            //     title: Text('ข้อมูลส่วนตัว'),
+            //     subtitle: Text(
+            //       'ข้อมูลส่วนตัวของพนักงาน',
+            //       style: TextStyle(fontSize: 10),
+            //     ),
+            //     trailing: Icon(Icons.arrow_right),
+            //     onTap: () {
+            //       Navigator.pop(context);
+            //       Navigator.of(context).push(MaterialPageRoute(
+            //           builder: (context) => InformationUser()));
+            //     }),
+            ListTile(
+                leading: Icon(Icons.person_pin),
+                title: Text('ดึ่งข้อมูล Dm'),
+                subtitle: Text(
+                  'โหลดข้อมูล Dm',
+                  style: TextStyle(fontSize: 10),
+                ),
+                trailing: Icon(Icons.arrow_right),
+                onTap: () {
+                  Navigator.pop(context);
+
+                  Get.to(DmsxLoadList())?.then(
+                    (value) {},
+                  );
+
+                  // Navigator.of(context).push(MaterialPageRoute(
+                  //     builder: (context) => DmsxLoadList())).then((value) {
+
+                  //       if (value ?? false) {
+                  //         setState(() {
+
+                  //         });
+                  //       }
+
+                  //     },);
+                }),
+            ListTile(
+                leading: Icon(Icons.help),
+                title: Text('ช่วยเหลือ'),
+                subtitle: Text(
+                  'ช่วยเหลือ คู่มือต่าง',
+                  style: TextStyle(fontSize: 10),
+                ),
+                trailing: Icon(Icons.arrow_right),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => HelpPage()));
+                }),
+            ListTile(
+                leading: Icon(Icons.download_rounded),
+                title: Text('ดึงข้อมูล'),
+                subtitle: Text(
+                  'เปิดเว็ปไซต์บริษัท,แหล่งข้อมูล',
+                  style: TextStyle(fontSize: 10),
+                ),
+                trailing: Icon(Icons.arrow_right),
+                onTap: () {
+                  Navigator.pop(context);
+
+                  launchURL();
+                }),
+            ListTile(
+              leading: Icon(Icons.logout),
+              title: Text('ออกจากระบบ'),
+              subtitle: Text(
+                'ออกจากระบบ',
+                style: TextStyle(fontSize: 10),
+              ),
+              onTap: () {
+                //signOutProcess();
+                //deleteAllData();
+                confirmDialog();
+              },
+            ),
+            Divider(),
+            ListTile(
+              title: Text('Version อัพเดทล่าสุด'),
+              subtitle: Text(
+                'อัพเดทเมื่อ 31 กรกฎาคม 2568',
+                style: TextStyle(fontSize: 10),
+              ),
+            ),
+          ],
+        ),
+      );
   }
 
   Future<Null> confirmDialog() async {

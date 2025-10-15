@@ -15,12 +15,13 @@ class MyDialog {
     Widget? firstButton,
     Widget? secondButton,
     Widget? contentWidget,
+    TextStyle? textStyle,
   }) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: ListTile(
-          title: ShowText(text: title),
+          title: ShowText(text: title, textStyle: textStyle,),
           subtitle: ShowText(text: subTitle),
         ),
         content: contentWidget ?? const SizedBox(),

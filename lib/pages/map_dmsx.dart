@@ -7,12 +7,14 @@ import 'package:dio/dio.dart' as dio;
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:psinsx/main.dart';
 import 'package:psinsx/models/dmsx_befor_image_model.dart';
@@ -349,59 +351,82 @@ class _MapdmsxState extends State<Mapdmsx> {
 
   @override
   Widget build(BuildContext context) {
-    return GetX(
-        init: AppController(),
-        builder: (AppController appController) {
-          print('position ->> ${appController.positions.length}');
-          return Scaffold(
-            body: ((load) &&
-                    (appController.positions.isNotEmpty) &&
-                    (haveData != null))
-                ? ShowProgress()
-                : haveData ?? false
-                    ? showDataMap(appController: appController)
-                    : Center(child: Text('ไม่มีข้อมูล', style:  TextStyle(fontSize: 24, fontWeight: FontWeight.bold),)),
-            bottomNavigationBar: BottomAppBar(
+    return LoaderOverlay(overlayColor: Colors.black38,
+      useDefaultLoading: false,
+      overlayWidgetBuilder: (progress) {
+        return Center(
+            child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SpinKitPouringHourGlassRefined(
               color: Colors.white,
             ),
-            floatingActionButton: Row(
-              children: [
+            SizedBox(height: 8),
+            Text('Loading ...', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white)),
+          ],
+        ));
+      },
 
-                SizedBox(width: 16),
-
-                IconButton(onPressed: () {
+      child: GetX(
+          init: AppController(),
+          builder: (AppController appController) {
+            print('position ->> ${appController.positions.length}');
+            return SizedBox(width: Get.width,height: Get.height,
+              child: Scaffold(
+                body: ((load) && (appController.positions.isNotEmpty) && (haveData != null))
+                    ? ShowProgress()
+                    : haveData ?? false
+                        ? showDataMap(appController: appController)
+                        // ? Text('data')
+                        : SizedBox(),
+                        // : Center(child: Text('ไม่มีข้อมูล', style:  TextStyle(fontSize: 24, fontWeight: FontWeight.bold),)),
                 
-                  readDataApi();
-                  
-                }, icon: Container(decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(8)),padding: EdgeInsets.all(4),
-                  child: Icon(Icons.refresh, color: Colors.white,))),
-              ],
-            ),
-          );
-        });
+                floatingActionButton: Row(
+                  children: [
+              
+                    SizedBox(width: 16),
+              
+                    IconButton(onPressed: ()async {
+
+                      context.loaderOverlay.show();
+                    
+                      await readDataApi().then((value) {
+
+                        Future.delayed(Duration(seconds: 3), (){
+                          context.loaderOverlay.hide();
+                        });
+
+                      },);
+                      
+                    }, icon: Container(decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(8)),padding: EdgeInsets.all(4),
+                      child: Icon(Icons.refresh, color: Colors.white,))),
+                  ],
+                ),
+              ),
+            );
+          }),
+    );
   }
 
   Widget showDataMap({required AppController appController}) {
-    return LayoutBuilder(builder: (context, BoxConstraints constranis) {
-      return SizedBox(
-        width: constranis.maxWidth,
-        height: constranis.maxHeight,
+    return SafeArea(
+      child: SizedBox(width: Get.width, height: Get.height,
         child: Stack(
-          fit: StackFit.expand,
-          children: [
-            buildMap(),
-            buildMoney(),
-            buildControl(),
-            buildControlGreen(),
-            buildControlPubple(),
-            buildSearchButton(),
-            showDirction
-                ? buildDirction(appController: appController)
-                : SizedBox(),
-          ],
-        ),
-      );
-    });
+              // fit: StackFit.expand,
+              children: [
+                buildMap(),
+                buildMoney(),
+                buildControl(),
+                buildControlGreen(),
+                buildControlPubple(),
+                buildSearchButton(),
+                showDirction
+                    ? buildDirction(appController: appController)
+                    : SizedBox(),
+              ],
+            ),
+      ),
+    );
   }
 
   // Positioned buildSearchButton() {
